@@ -1,11 +1,23 @@
 import 'package:flutter/material.dart';
-import 'screens/auth/welcome_screen.dart';
 import 'package:provider/provider.dart';
-import 'providers/donor_provider.dart';
-import 'screens/donor/donor_home.dart';
+import 'screens/auth/welcome_screen.dart';
+
+// استدعاء ملفات صديقاتكِ (تم تعليقها مؤقتاً)
+// import 'providers/donor_provider.dart';
+// import 'screens/donor/donor_home.dart';
+
+// استدعاء ملفاتكِ الخاصة بـ (المحتاج / Patient)
+import 'providers/patient_provider.dart';
+import 'screens/patient/patient_home_screen.dart'; 
 
 void main() {
-  runApp(const MyApp());
+  runApp(
+    // تهيئة الـ Provider الخاص بكِ ليعمل في كامل التطبيق أثناء التجربة
+    ChangeNotifierProvider(
+      create: (context) => PatientProvider(),
+      child: const MyApp(),
+    ),
+  );
 }
 
 class MyApp extends StatelessWidget {
@@ -15,7 +27,12 @@ class MyApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return const MaterialApp(
       debugShowCheckedModeBanner: false,
-      home: WelcomeScreen(),
+      
+      // الشاشة الرئيسية الموجهة لشاشتكِ لتجربتها مباشرة:
+      home: HomePatientScreen(),
+      
+      // أسطر التحكم السابقة (معلقة مؤقتاً)
+      // home: WelcomeScreen(),
       // home: HomeDonorScreen(),
     );
   }
