@@ -1,9 +1,12 @@
-// donor_provider.dart
 import 'package:flutter/material.dart';
+
 import '../models/donor_model.dart';
+import '../services/donor_service.dart';
 
 class DonorProvider with ChangeNotifier {
-  Donor_model _currentDonor = Donor_model(
+  final DonorService _donorService = DonorService();
+
+  DonorModel _currentDonor = DonorModel(
     id: '101',
     name: 'أحمد محمد',
     bloodType: 'O+',
@@ -12,6 +15,10 @@ class DonorProvider with ChangeNotifier {
 
   int _donationReadiness = 100;
   String _lastDonationDate = '20/9/2025';
+
+  bool _isLoading = false;
+  bool _isSuccess = false;
+  String? _errorMessage;
 
   final List<Map<String, String>> _bloodRequests = [
     {
@@ -28,9 +35,13 @@ class DonorProvider with ChangeNotifier {
     },
   ];
 
-  Donor_model get currentDonor => _currentDonor;
+  DonorModel get currentDonor => _currentDonor;
   int get donationReadiness => _donationReadiness;
   String get lastDonationDate => _lastDonationDate;
+
+  bool get isLoading => _isLoading;
+  bool get isSuccess => _isSuccess;
+  String? get errorMessage => _errorMessage;
 
   List<Map<String, String>> get bloodRequests {
     if (_donationReadiness == 100 && _currentDonor.isAvailable) {
@@ -39,48 +50,90 @@ class DonorProvider with ChangeNotifier {
     return [];
   }
 
-  void toggleAvailability(bool value) {
+  Future<void> registerDonor({
+    required String name,
+    required String phone,
+    required String bloodType,
+    required String city,
+    required int age,
+  }) async {
+    _isLoading = true;
+    _isSuccess = false;
+    _errorMessage = null;
+    notifyListeners();
+
+    try {
+      final uid = _donorService.getCurrentUidOrTemporary();
+
+      final donor = DonorModel(
+        id: uid,
+        name: name,
+        phone: phone,
+        bloodType: bloodType,
+        city: city,
+        age: age,
+        isAvailable: false,
+        donationReadiness: 100,
+        lastDonationDate: null,
+      );
+
+      await _donorService.createDonor(donor);
+
+      _currentDonor = donor;
+      _donationReadiness = donor.donationReadiness;
+      _lastDonationDate = 'لا يوجد';
+
+      _isSuccess = true;
+    } catch (error) {
+      _errorMessage = 'حدث خطأ أثناء تسجيل المتبرع، حاول مرة أخرى';
+    } finally {
+      _isLoading = false;
+      notifyListeners();
+    }
+  }
+
+  Future<void> toggleAvailability(bool value) async {
     if (_donationReadiness < 100) return;
 
-    _currentDonor = Donor_model(
+    _currentDonor = DonorModel(
       id: _currentDonor.id,
       name: _currentDonor.name,
+      phone: _currentDonor.phone,
       bloodType: _currentDonor.bloodType,
+      city: _currentDonor.city,
+      age: _currentDonor.age,
       isAvailable: value,
+      donationReadiness: _currentDonor.donationReadiness,
+      lastDonationDate: _currentDonor.lastDonationDate,
     );
 
     notifyListeners();
+
+    // السطر الجديد للربط بالقاعدة:
+    await _donorService.createDonor(_currentDonor);
   }
 
-  // تم تصحيح الدالة وتفعيلها هنا لتلافي التكرار والخطأ البرمجي
   Future<void> acceptBloodRequest(String requestId) async {
     try {
-      // 1. كود قَبول الطلب في الـ Firebase أو العمليات البرمجية المحلية الخاصة بكِ
-      // يمكنكِ تفعيل الكود أدناه لاحقاً لإزالة الطلب المقبول من القائمة كي لا يظهر مجدداً
       _bloodRequests.removeWhere((request) => request['id'] == requestId);
 
-      // 2. التحديث التلقائي للحالة ونسبة الجاهزية بعد الموافقة
-      _donationReadiness =
-          0; // تقليل النسبة إلى 0% لأن المستخدم وافق على التبرع الآن
+      _donationReadiness = 0;
 
-      // الحل الصحيح: إعادة بناء كائن المتبرع وتمرير قيمة false للـ isAvailable
-      _currentDonor = Donor_model(
+      _currentDonor = DonorModel(
         id: _currentDonor.id,
         name: _currentDonor.name,
+        phone: _currentDonor.phone,
         bloodType: _currentDonor.bloodType,
-        isAvailable: false, // تحويل السويتش تلقائياً لغير متاح
+        city: _currentDonor.city,
+        age: _currentDonor.age,
+        isAvailable: false,
+        donationReadiness: 0,
+        lastDonationDate: _currentDonor.lastDonationDate,
       );
 
-      // 3. تحديث قاعدة البيانات الفايربيس بالحالة الجديدة للمتبرع (اختياري حسب مشروعك)
-      // await _db.collection('donors').doc(_currentDonor.id).update({
-      //   'isAvailable': false,
-      //   'donationReadiness': 0,
-      // });
-
-      // 4. إعلام جميع الشاشات بالتغيير لتحديث الواجهات فوراً
       notifyListeners();
     } catch (e) {
-      print("خطأ أثناء قبول الطلب: $e");
+      debugPrint("خطأ أثناء قبول الطلب: $e");
     }
   }
 
@@ -91,12 +144,16 @@ class DonorProvider with ChangeNotifier {
 
   Future<void> logoutAndDestroyAccount() async {
     try {
-      _currentDonor = Donor_model(
+      _currentDonor = DonorModel(
         id: '',
         name: '',
         bloodType: '',
         isAvailable: false,
       );
+
+      _isSuccess = false;
+      _errorMessage = null;
+
       notifyListeners();
     } catch (error) {
       debugPrint('حدث خطأ أثناء حذف الحساب: $error');

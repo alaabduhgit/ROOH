@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart'; // سطر إضافي للاستماع للمحرك
 
 import '/core/theme/light_theme.dart';
 import '/core/theme/text_styles.dart';
 import '/core/widgets/widget.dart';
 
+import '../../providers/patient_provider.dart'; // مسار المحرك الخاص بالمريض
 import 'accepted_screen.dart';
 
 class WaitingPatientScreen extends StatelessWidget {
@@ -11,6 +13,19 @@ class WaitingPatientScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // الاستماع المستمر للتغيرات الحاصلة في السحاب عبر الـ Provider
+    final patientProvider = context.watch<PatientProvider>();
+
+    // لقطة ذكية: إذا تغيرت الحالة في الفايربيس وتم قبول الطلب، انقل المريض لشاشة القبول فوراً تلقائياً
+    if (patientProvider.requestAccepted) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(builder: (_) => const AcceptedPatientScreen()),
+        );
+      });
+    }
+
     return Directionality(
       textDirection: TextDirection.rtl,
       child: Scaffold(
@@ -24,13 +39,11 @@ class WaitingPatientScreen extends StatelessWidget {
 
                   const SizedBox(height: 30),
 
-                  const Text(
-                    'تم إرسال الطلب',
-                    style: AppTextStyles.title,
-                  ),
+                  const Text('تم إرسال الطلب', style: AppTextStyles.title),
 
                   const SizedBox(height: 40),
 
+                  // دائرة التحميل والانتظار المستمر
                   Container(
                     width: 140,
                     height: 140,
@@ -79,26 +92,31 @@ class WaitingPatientScreen extends StatelessWidget {
 
                   const Spacer(),
 
-                  /// مؤقت فقط أثناء التطوير
+                  /// زر إلغاء الطلب البرمجي لحذفه من السحاب إذا أراد المريض التراجع
                   SizedBox(
                     width: double.infinity,
                     child: ElevatedButton.icon(
-                      style: appButtonStyle(),
+                      style: appButtonStyle().copyWith(
+                        backgroundColor: WidgetStateProperty.all(
+                          Colors.red.withOpacity(0.8),
+                        ),
+                      ),
                       onPressed: () {
-                        Navigator.pushReplacement(
-                          context,
-                          MaterialPageRoute(
-                            builder: (_) =>
-                                const AcceptedPatientScreen(),
-                          ),
-                        );
+                        // استدعاء دالة إلغاء الطلب من الـ Provider
+                        context.read<PatientProvider>().cancelRequest();
+                        // الرجوع للخلف أو إغلاق الشاشة
+                        Navigator.pop(context);
                       },
-                      icon: const Icon(Icons.check),
+                      icon: const Icon(Icons.cancel, color: Colors.white),
                       label: const Padding(
                         padding: EdgeInsets.symmetric(vertical: 15),
                         child: Text(
-                          'محاكاة قبول الطلب',
-                          style: AppTextStyles.button,
+                          'إلغاء طلب التبرع',
+                          style: TextStyle(
+                            fontSize: 18,
+                            color: Colors.white,
+                            fontFamily: 'Cairo',
+                          ),
                         ),
                       ),
                     ),

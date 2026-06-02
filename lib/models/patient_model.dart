@@ -29,7 +29,7 @@ class PatientModel {
       name: map['name'] ?? '',
       bloodType: map['bloodType'] ?? '',
       phone: map['phone'] ?? '',
-      totalRequests: map['totalRequests'] ?? '',
+      totalRequests: map['totalRequests'] ?? 0,
     );
   }
 }

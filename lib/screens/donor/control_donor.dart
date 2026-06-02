@@ -6,6 +6,7 @@ import '/core/theme/text_styles.dart';
 import '/core/widgets/widget.dart';
 import '../../providers/donor_provider.dart';
 import 'widgets/donor_widgets.dart';
+import '../auth/blood_info_screen.dart';
 
 class ControlDonorScreen extends StatelessWidget {
   const ControlDonorScreen({super.key});
@@ -31,7 +32,8 @@ class ControlDonorScreen extends StatelessWidget {
                   AppGlassContainer(
                     child: Consumer<DonorProvider>(
                       builder: (context, provider, child) {
-                        final donor = provider.currentDonor;
+                        // الحل للخطأ الأول: الوصول للحالة من خلال كائن المتبرع الحالي
+                        final isAvailable = provider.currentDonor.isAvailable;
                         final readiness = provider.donationReadiness;
 
                         return Column(
@@ -39,14 +41,14 @@ class ControlDonorScreen extends StatelessWidget {
                           children: [
                             DonorMenuRow(
                               icon: Icons.cached,
-                              title: 'التحكم بالحالة للجاهزية',
+                              title:
+                                  'حالتك الآن: ${isAvailable ? "متاح للتبرع" : "غير متاح"}',
                               trailing: Switch(
-                                onChanged: readiness == 100
-                                    ? provider.toggleAvailability
+                                // الحل للخطأ الثاني: تمرير القيمة (val) للدالة كما يطلب المحرر
+                                onChanged: (readiness == 100)
+                                    ? (val) => provider.toggleAvailability(val)
                                     : null,
-                                value: readiness == 100
-                                    ? donor.isAvailable
-                                    : false,
+                                value: isAvailable,
                                 activeColor: AppColors.primary,
                               ),
                             ),
@@ -56,15 +58,15 @@ class ControlDonorScreen extends StatelessWidget {
                               title: 'ثقف نفسك',
                               trailing: const Icon(
                                 Icons.arrow_forward_ios,
-                                color: AppColors.primary,
                                 size: 16,
                               ),
                               onTap: () {
-                                ScaffoldMessenger.of(context).showSnackBar(
-                                  const SnackBar(
-                                    content: Text(
-                                      'الانتقال إلى شاشة ثقف نفسك...',
-                                    ),
+                                // التعديل: الانتقال الفعلي لشاشة المعلومات الصحية
+                                Navigator.push(
+                                  context,
+                                  MaterialPageRoute(
+                                    builder: (context) =>
+                                        const BloodInfoScreen(),
                                   ),
                                 );
                               },

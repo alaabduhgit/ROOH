@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "601197016028",
+    "project_id": "rooh-2097e",
+    "storage_bucket": "rooh-2097e.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:601197016028:android:152f9d1c085f644cea1519",
+        "android_client_info": {
+          "package_name": "com.example.rooh"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDMoiMXPlZWnySxqdrqh-ldLZlfO8iXanI"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
