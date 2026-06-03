@@ -1,223 +1,301 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+
 import '/core/theme/light_theme.dart';
 import '/core/theme/text_styles.dart';
 import '/core/widgets/widget.dart';
 import '../../providers/patient_provider.dart';
+import '../auth/choose_role_screen.dart';
 import 'create_request_screen.dart';
-import 'patient_profile_screen.dart'; // استيراد ملف البروفايل ليعمل زر الانتقال
-import '../auth/choose_role_screen.dart'; // 💡 استيراد شاشة الاختيار (تأكدي من صحة المسار لديكِ)
+import 'patient_profile_screen.dart';
+import 'waiting_screen.dart';
 
-class HomePatientScreen extends StatefulWidget {
+class HomePatientScreen extends StatelessWidget {
   const HomePatientScreen({super.key});
 
-  @override
-  State<HomePatientScreen> createState() => _HomePatientScreenState();
-}
+  void _goToCreateRequest(BuildContext context) {
+    Navigator.push(
+      context,
+      MaterialPageRoute(builder: (_) => const CreateRequestScreen()),
+    );
+  }
 
-class _HomePatientScreenState extends State<HomePatientScreen> {
+  void _goToWaitingScreen(BuildContext context) {
+    Navigator.push(
+      context,
+      MaterialPageRoute(builder: (_) => const WaitingPatientScreen()),
+    );
+  }
+
+  void _goToProfile(BuildContext context) {
+    Navigator.push(
+      context,
+      MaterialPageRoute(builder: (_) => const PatientProfileScreen()),
+    );
+  }
+
+  Future<void> _deleteAccount(
+    BuildContext context,
+    PatientProvider provider,
+  ) async {
+    await provider.logoutAndDestroyAccount();
+
+    if (!context.mounted) return;
+
+    Navigator.pushAndRemoveUntil(
+      context,
+      MaterialPageRoute(builder: (_) => const ChooseRoleScreen()),
+      (route) => false,
+    );
+  }
+
+  void _showDeleteConfirmationDialog(
+    BuildContext context,
+    PatientProvider provider,
+  ) {
+    showDialog(
+      context: context,
+      builder: (dialogContext) {
+        return Directionality(
+          textDirection: TextDirection.rtl,
+          child: AlertDialog(
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(25),
+            ),
+            title: const Text(
+              'تأكيد الحذف النهائي',
+              textAlign: TextAlign.right,
+              style: TextStyle(
+                fontFamily: 'Cairo',
+                fontWeight: FontWeight.bold,
+                color: AppColors.primary,
+              ),
+            ),
+            content: const Text(
+              'هل أنت متأكد من رغبتك في حذف حسابك وكافة بياناتك؟ لا يمكن التراجع عن هذا الإجراء.',
+              textAlign: TextAlign.right,
+              style: TextStyle(fontFamily: 'Cairo', fontSize: 14),
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(dialogContext),
+                child: const Text(
+                  'إلغاء',
+                  style: TextStyle(fontFamily: 'Cairo'),
+                ),
+              ),
+              ElevatedButton(
+                style: appButtonStyle(),
+                onPressed: () async {
+                  Navigator.pop(dialogContext);
+                  await _deleteAccount(context, provider);
+                },
+                child: const Text(
+                  'نعم، احذف نهائياً',
+                  style: TextStyle(fontFamily: 'Cairo'),
+                ),
+              ),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Directionality(
       textDirection: TextDirection.rtl,
-      child: Scaffold(
-        extendBody: true,
-        body: AppBackground(
-          child: SafeArea(
-            child: Consumer<PatientProvider>(
-              builder: (context, provider, child) {
-                final patient = provider.currentPatient;
+      child: Consumer<PatientProvider>(
+        builder: (context, patientProvider, child) {
+          final patient = patientProvider.currentPatient;
 
-                // ✨ السحر الهندي هنا: إذا تم حذف الحساب وأصبح الاسم فارغاً، يتم طرد المستخدم فوراً لشاشة الاختيار
-                if (patient.name.isEmpty) {
-                  WidgetsBinding.instance.addPostFrameCallback((_) {
-                    Navigator.pushAndRemoveUntil(
-                      context,
-                      // 💡 تأكدي أن اسم كلاس شاشة الاختيار بين متبرع ومحتاج هو RoleSelectionScreen أو عدليه لاسم كلاس شاشتكِ
-                      MaterialPageRoute(
-                        builder: (_) => const ChooseRoleScreen(),
-                      ),
-                      (route) =>
-                          false, // حذف تاريخ الشاشات لمنع العودة للخلف نهائياً
-                    );
-                  });
-                  return const Scaffold(
-                    body: Center(child: CircularProgressIndicator()),
-                  );
-                }
-
-                return Padding(
+          return Scaffold(
+            body: AppBackground(
+              child: SafeArea(
+                child: SingleChildScrollView(
+                  physics: const BouncingScrollPhysics(),
                   padding: const EdgeInsets.all(24),
                   child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          const Text(
-                            'لوحة المحتاج',
-                            style: AppTextStyles.title,
-                          ),
-                          IconButton(
-                            icon: const Icon(
-                              Icons.account_circle,
-                              size: 32,
-                              color: AppColors.primary,
-                            ),
-                            onPressed: () {
-                              Navigator.push(
-                                context,
-                                MaterialPageRoute(
-                                  builder: (context) =>
-                                      const PatientProfileScreen(),
-                                ),
-                              );
-                            },
-                          ),
-                        ],
+                      const Text(
+                        'لوحة المحتاج',
+                        style: AppTextStyles.title,
+                        textAlign: TextAlign.center,
                       ),
-                      const SizedBox(height: 25),
 
-                      // 1. بطاقة الترحيب
+                      const SizedBox(height: 35),
+
                       Container(
                         width: double.infinity,
-                        padding: const EdgeInsets.all(20),
+                        padding: const EdgeInsets.all(22),
                         decoration: BoxDecoration(
                           color: AppColors.card,
                           borderRadius: BorderRadius.circular(25),
                         ),
                         child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            const Icon(
-                              Icons.favorite,
-                              color: AppColors.primary,
-                              size: 45,
-                            ),
-                            const SizedBox(height: 10),
-                            Text(
-                              'مرحباً ${patient.name}',
+                            const Text(
+                              'بيانات الحالة',
                               style: AppTextStyles.cardTitle,
+                              textAlign: TextAlign.right,
                             ),
-                            const SizedBox(height: 8),
-                            const Text(
-                              'يمكنك إنشاء طلب تبرع جديد في أي وقت.',
-                              textAlign: TextAlign.center,
-                              style: TextStyle(fontFamily: 'Cairo'),
+                            const SizedBox(height: 16),
+                            _InfoLine(
+                              icon: Icons.person,
+                              title: 'الاسم',
+                              value: patient.name.isEmpty
+                                  ? 'غير محدد'
+                                  : patient.name,
                             ),
-                          ],
-                        ),
-                      ),
-                      const SizedBox(height: 15),
-
-                      // 2. بطاقة فصيلة الدم
-                      Container(
-                        width: double.infinity,
-                        padding: const EdgeInsets.all(20),
-                        decoration: BoxDecoration(
-                          color: AppColors.card,
-                          borderRadius: BorderRadius.circular(25),
-                        ),
-                        child: Row(
-                          children: [
-                            const Icon(
-                              Icons.bloodtype,
-                              color: AppColors.primary,
+                            const SizedBox(height: 12),
+                            _InfoLine(
+                              icon: Icons.bloodtype,
+                              title: 'فصيلة الدم',
+                              value: patient.bloodType.isEmpty
+                                  ? 'غير محدد'
+                                  : patient.bloodType,
                             ),
-                            const SizedBox(width: 10),
-                            const Text(
-                              'فصيلة الدم',
-                              style: TextStyle(
-                                fontWeight: FontWeight.bold,
-                                fontFamily: 'Cairo',
-                              ),
-                            ),
-                            const Spacer(),
-                            Text(
-                              patient.bloodType,
-                              style: const TextStyle(
-                                fontWeight: FontWeight.bold,
-                                color: AppColors.primary,
-                                fontFamily: 'Cairo',
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                      const SizedBox(height: 15),
-
-                      // 3. بطاقة حالة الطلب
-                      Container(
-                        width: double.infinity,
-                        padding: const EdgeInsets.all(20),
-                        decoration: BoxDecoration(
-                          color: AppColors.card,
-                          borderRadius: BorderRadius.circular(25),
-                        ),
-                        child: Row(
-                          children: [
-                            const Icon(
-                              Icons.assignment,
-                              color: AppColors.primary,
-                            ),
-                            const SizedBox(width: 10),
-                            const Text(
-                              'حالة الطلب',
-                              style: TextStyle(
-                                fontWeight: FontWeight.bold,
-                                fontFamily: 'Cairo',
-                              ),
-                            ),
-                            const Spacer(),
-                            Text(
-                              provider.hasActiveRequest
-                                  ? 'جاري البحث'
-                                  : 'لا يوجد طلب',
-                              style: TextStyle(
-                                color: provider.hasActiveRequest
-                                    ? Colors.green
-                                    : AppColors.grey,
-                                fontWeight: FontWeight.bold,
-                                fontFamily: 'Cairo',
-                              ),
+                            const SizedBox(height: 12),
+                            _InfoLine(
+                              icon: Icons.phone,
+                              title: 'رقم التواصل',
+                              value: patient.phone.isEmpty
+                                  ? 'غير محدد'
+                                  : patient.phone,
                             ),
                           ],
                         ),
                       ),
 
-                      const Spacer(),
+                      const SizedBox(height: 25),
 
-                      // 4. زر إنشاء الطلب (يختفي ذكياً إذا كان هناك طلب نشط جاري البحث عنه)
-                      // if (!provider.hasActiveRequest)
                       SizedBox(
                         width: double.infinity,
+                        height: 60,
                         child: ElevatedButton.icon(
                           style: appButtonStyle(),
+                          onPressed: patientProvider.hasActiveRequest
+                              ? () => _goToWaitingScreen(context)
+                              : () => _goToCreateRequest(context),
+                          icon: Icon(
+                            patientProvider.hasActiveRequest
+                                ? Icons.hourglass_top
+                                : Icons.add_circle_outline,
+                            color: AppColors.white,
+                          ),
+                          label: Text(
+                            patientProvider.hasActiveRequest
+                                ? 'متابعة الطلب الحالي'
+                                : 'إنشاء طلب تبرع',
+                            style: AppTextStyles.button,
+                          ),
+                        ),
+                      ),
+
+                      const SizedBox(height: 16),
+
+                      SizedBox(
+                        width: double.infinity,
+                        height: 58,
+                        child: OutlinedButton.icon(
+                          style: OutlinedButton.styleFrom(
+                            side: const BorderSide(color: AppColors.primary),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(50),
+                            ),
+                          ),
+                          onPressed: () => _goToProfile(context),
+                          icon: const Icon(
+                            Icons.person_rounded,
+                            color: AppColors.primary,
+                          ),
+                          label: const Text(
+                            'الملف الشخصي',
+                            style: TextStyle(
+                              color: AppColors.primary,
+                              fontSize: 17,
+                              fontWeight: FontWeight.bold,
+                              fontFamily: 'Cairo',
+                            ),
+                          ),
+                        ),
+                      ),
+
+                      const SizedBox(height: 16),
+
+                      SizedBox(
+                        width: double.infinity,
+                        height: 58,
+                        child: TextButton.icon(
                           onPressed: () {
-                            Navigator.push(
+                            _showDeleteConfirmationDialog(
                               context,
-                              MaterialPageRoute(
-                                builder: (_) => const CreateRequestScreen(),
-                              ),
+                              patientProvider,
                             );
                           },
-                          icon: const Icon(Icons.add),
-                          label: const Padding(
-                            padding: EdgeInsets.symmetric(vertical: 15),
-                            child: Text(
-                              'إنشاء طلب جديد',
-                              style: AppTextStyles.button,
+                          icon: const Icon(
+                            Icons.delete_forever,
+                            color: AppColors.primary,
+                          ),
+                          label: const Text(
+                            'حذف الحساب',
+                            style: TextStyle(
+                              color: AppColors.primary,
+                              fontSize: 16,
+                              fontWeight: FontWeight.bold,
+                              fontFamily: 'Cairo',
                             ),
                           ),
                         ),
                       ),
                     ],
                   ),
-                );
-              },
+                ),
+              ),
             ),
+          );
+        },
+      ),
+    );
+  }
+}
+
+class _InfoLine extends StatelessWidget {
+  final IconData icon;
+  final String title;
+  final String value;
+
+  const _InfoLine({
+    required this.icon,
+    required this.title,
+    required this.value,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.center,
+      children: [
+        Icon(icon, color: AppColors.primary, size: 22),
+        const SizedBox(width: 10),
+        Text(
+          '$title: ',
+          style: const TextStyle(
+            fontFamily: 'Cairo',
+            fontWeight: FontWeight.bold,
+            color: AppColors.primary,
           ),
         ),
-      ),
+        Expanded(
+          child: Text(
+            value,
+            textAlign: TextAlign.right,
+            style: const TextStyle(fontFamily: 'Cairo', color: AppColors.black),
+          ),
+        ),
+      ],
     );
   }
 }

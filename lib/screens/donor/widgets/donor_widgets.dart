@@ -1,10 +1,9 @@
 import 'package:flutter/material.dart';
 
 import '/core/theme/light_theme.dart';
-
+import '../../auth/choose_role_screen.dart';
 import '../control_donor.dart';
 import '../donor_home.dart';
-import '../../auth/choose_role_screen.dart'; // تأكدي من المسار الصحيح لملف ChooseRoleScreen
 
 class DonorBottomNav extends StatelessWidget {
   final int currentIndex;
@@ -15,20 +14,22 @@ class DonorBottomNav extends StatelessWidget {
     if (index == currentIndex) return;
 
     if (index == 0) {
-      // شاشة التحكم بالحالة
       Navigator.pushReplacement(
         context,
         MaterialPageRoute(builder: (_) => const ControlDonorScreen()),
       );
-    } else if (index == 1) {
-      // شاشة الاختيار الرئيسية (التي تظهر عند فتح التطبيق أول مرة)
-      // تأكدي من أن اسم الكلاس هو ChooseRoleScreen كما في ملفاتك
+      return;
+    }
+
+    if (index == 1) {
       Navigator.pushReplacement(
         context,
         MaterialPageRoute(builder: (_) => const ChooseRoleScreen()),
       );
-    } else if (index == 2) {
-      // شاشة لوحة المتبرع (الحساب)
+      return;
+    }
+
+    if (index == 2) {
       Navigator.pushReplacement(
         context,
         MaterialPageRoute(builder: (_) => const HomeDonorScreen()),
@@ -212,7 +213,11 @@ class DonorInfoRow extends StatelessWidget {
             children: [
               Text(
                 title,
-                style: TextStyle(fontSize: 13, color: AppColors.grey),
+                style: TextStyle(
+                  fontSize: 13,
+                  color: AppColors.grey,
+                  fontFamily: 'Cairo',
+                ),
               ),
               const SizedBox(height: 4),
               Text(

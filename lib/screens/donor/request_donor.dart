@@ -1,18 +1,37 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+
 import '/core/theme/light_theme.dart';
 import '/core/theme/text_styles.dart';
 import '/core/widgets/widget.dart';
 import '../../providers/donor_provider.dart';
+import 'widgets/donor_widgets.dart';
 
 class RequestDonorScreen extends StatelessWidget {
   final Map<String, dynamic> requestDetails;
 
   const RequestDonorScreen({super.key, required this.requestDetails});
 
+  String _readValue(String key, String fallback) {
+    final value = requestDetails[key];
+
+    if (value == null) return fallback;
+
+    final text = value.toString().trim();
+
+    return text.isEmpty ? fallback : text;
+  }
+
   @override
   Widget build(BuildContext context) {
     final provider = Provider.of<DonorProvider>(context, listen: false);
+
+    final requestId = _readValue('id', '');
+    final bloodType = _readValue('bloodType', 'غير معروف');
+    final patientName = _readValue('patientName', 'مريض بحاجة لدعمكم');
+    final hospital = _readValue('hospital', 'غير محدد');
+    final location = _readValue('location', 'غير محدد');
+    final notes = _readValue('notes', 'لا توجد ملاحظات');
 
     return Directionality(
       textDirection: TextDirection.rtl,
@@ -24,13 +43,18 @@ class RequestDonorScreen extends StatelessWidget {
               padding: const EdgeInsets.all(24),
               child: Column(
                 children: [
-                  /// زر الرجوع
                   appBackButton(context),
+
                   const SizedBox(height: 20),
-                  const Text('تفاصيل طلب التبرع', style: AppTextStyles.title),
+
+                  const Text(
+                    'تفاصيل طلب التبرع',
+                    style: AppTextStyles.title,
+                    textAlign: TextAlign.center,
+                  ),
+
                   const SizedBox(height: 30),
 
-                  /// دائرة فصيلة الدم
                   Container(
                     width: 110,
                     height: 110,
@@ -41,7 +65,7 @@ class RequestDonorScreen extends StatelessWidget {
                     ),
                     child: Center(
                       child: Text(
-                        requestDetails['bloodType'] ?? 'غير معروف',
+                        bloodType,
                         style: const TextStyle(
                           fontSize: 32,
                           fontWeight: FontWeight.bold,
@@ -52,124 +76,134 @@ class RequestDonorScreen extends StatelessWidget {
                     ),
                   ),
 
-                  const SizedBox(height: 40),
+                  const SizedBox(height: 10),
 
-                  /// الكارد الأبيض المخصص لعرض تفاصيل المريض الحقيقية من السحاب
+                  Text(
+                    'فصيلة الدم المطلوبة',
+                    style: TextStyle(
+                      fontSize: 14,
+                      color: AppColors.grey,
+                      fontWeight: FontWeight.w500,
+                      fontFamily: 'Cairo',
+                    ),
+                  ),
+
+                  const SizedBox(height: 30),
+
                   Container(
                     width: double.infinity,
                     padding: const EdgeInsets.all(20),
                     decoration: BoxDecoration(
                       color: AppColors.card,
                       borderRadius: BorderRadius.circular(25),
-                      boxShadow: [
-                        BoxShadow(
-                          color: Colors.black.withOpacity(0.05),
-                          blurRadius: 10,
-                          offset: const Offset(0, 5),
-                        ),
-                      ],
                     ),
                     child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        // 1. اسم المريض أو المستشفى
-                        _buildDetailRow(
+                        DonorInfoRow(
+                          icon: Icons.person_pin,
+                          title: 'اسم الحالة:',
+                          value: patientName,
+                        ),
+                        const Padding(
+                          padding: EdgeInsets.symmetric(vertical: 12),
+                          child: Divider(height: 1),
+                        ),
+                        DonorInfoRow(
                           icon: Icons.local_hospital,
-                          title: 'المستشفى / الجهة:',
-                          value:
-                              requestDetails['hospitalName'] ??
-                              requestDetails['hospital'] ??
-                              'غير محدد',
+                          title: 'مكان التبرع:',
+                          value: hospital,
                         ),
-                        const Divider(height: 24),
-
-                        // 2. الموقع أو العنوان
-                        _buildDetailRow(
+                        const Padding(
+                          padding: EdgeInsets.symmetric(vertical: 12),
+                          child: Divider(height: 1),
+                        ),
+                        DonorInfoRow(
                           icon: Icons.location_on,
-                          title: 'الموقع أو العنوان:',
-                          value:
-                              requestDetails['location'] ??
-                              'تعز - المركز الرئيسي',
+                          title: 'الموقع:',
+                          value: location,
                         ),
-                        const Divider(height: 24),
-
-                        // 3. ملاحظات المريض
-                        _buildDetailRow(
+                        const Padding(
+                          padding: EdgeInsets.symmetric(vertical: 12),
+                          child: Divider(height: 1),
+                        ),
+                        DonorInfoRow(
                           icon: Icons.notes,
-                          title: 'ملاحظات إضافية:',
-                          value:
-                              requestDetails['notes'] ??
-                              'طلب عاجل يرجى التواصل سريعاً.',
+                          title: 'ملاحظات:',
+                          value: notes,
                         ),
                       ],
                     ),
                   ),
 
-                  const SizedBox(height: 40),
+                  const SizedBox(height: 45),
 
-                  /// أزرار التحكم (قبول / رفض)
                   Row(
                     children: [
-                      // زر قبول الطلب
                       Expanded(
                         child: ElevatedButton.icon(
-                          style: appButtonStyle().copyWith(
-                            backgroundColor: WidgetStateProperty.all(
-                              AppColors.primary,
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: Colors.green.shade700,
+                            foregroundColor: AppColors.white,
+                            padding: const EdgeInsets.symmetric(vertical: 14),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(25),
                             ),
                           ),
                           onPressed: () async {
-                            // استدعاء دالة القبول من الـ Provider
-                            await provider.acceptBloodRequest(
-                              requestDetails['id'] ?? '',
-                            );
-                            if (context.mounted) {
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                const SnackBar(
-                                  content: Text(
-                                    'تم قبول طلب التبرع بنجاح، جاري التواصل.',
-                                  ),
+                            final messenger = ScaffoldMessenger.of(context);
+
+                            await provider.acceptBloodRequest(requestId);
+
+                            if (!context.mounted) return;
+
+                            Navigator.pop(context);
+
+                            messenger.showSnackBar(
+                              const SnackBar(
+                                content: Text(
+                                  'تم قبول الطلب، شكراً لإنقاذك حياة!',
+                                  style: TextStyle(fontFamily: 'Cairo'),
                                 ),
-                              );
-                              Navigator.pop(context);
-                            }
+                                backgroundColor: Colors.green,
+                              ),
+                            );
                           },
-                          icon: const Icon(Icons.check, color: Colors.white),
+                          icon: const Icon(Icons.check_circle_outline),
                           label: const Text(
-                            'قبول الطلب',
+                            'نعم، أوافق',
                             style: TextStyle(
-                              color: Colors.white,
+                              fontWeight: FontWeight.bold,
                               fontFamily: 'Cairo',
-                              fontSize: 16,
                             ),
                           ),
                         ),
                       ),
-                      const SizedBox(width: 12),
 
-                      // زر رفض الطلب
+                      const SizedBox(width: 15),
+
                       Expanded(
-                        child: OutlinedButton.icon(
-                          style: OutlinedButton.styleFrom(
-                            side: const BorderSide(color: Colors.grey),
-                            padding: const EdgeInsets.symmetric(vertical: 12),
+                        child: ElevatedButton.icon(
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: AppColors.primary,
+                            foregroundColor: AppColors.white,
+                            padding: const EdgeInsets.symmetric(vertical: 14),
                             shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(15),
+                              borderRadius: BorderRadius.circular(25),
                             ),
                           ),
-                          onPressed: () {
-                            provider.rejectBloodRequest(
-                              requestDetails['id'] ?? '',
-                            );
+                          onPressed: () async {
+                            await provider.rejectBloodRequest(requestId);
+
+                            if (!context.mounted) return;
+
                             Navigator.pop(context);
                           },
-                          icon: const Icon(Icons.close, color: Colors.grey),
+                          icon: const Icon(Icons.cancel_outlined),
                           label: const Text(
-                            'تجاهل',
+                            'لا، تخطى',
                             style: TextStyle(
-                              color: Colors.grey,
+                              fontWeight: FontWeight.bold,
                               fontFamily: 'Cairo',
-                              fontSize: 16,
                             ),
                           ),
                         ),
@@ -182,45 +216,6 @@ class RequestDonorScreen extends StatelessWidget {
           ),
         ),
       ),
-    );
-  }
-
-  /// دالة مساعدة لترتيب أسطر البيانات بشكل نظيف
-  Widget _buildDetailRow({
-    required IconData icon,
-    required String title,
-    required String value,
-  }) {
-    return Row(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Icon(icon, color: AppColors.primary, size: 24),
-        const SizedBox(width: 12),
-        Expanded(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                title,
-                style: const TextStyle(
-                  fontSize: 14,
-                  color: Colors.grey,
-                  fontFamily: 'Cairo',
-                ),
-              ),
-              const SizedBox(height: 2),
-              Text(
-                value,
-                style: const TextStyle(
-                  fontSize: 16,
-                  fontWeight: FontWeight.bold,
-                  fontFamily: 'Cairo',
-                ),
-              ),
-            ],
-          ),
-        ),
-      ],
     );
   }
 }

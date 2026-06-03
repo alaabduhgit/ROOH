@@ -24,6 +24,14 @@ InputDecoration appInputDecoration(String label, IconData icon) {
       borderRadius: BorderRadius.circular(50),
       borderSide: const BorderSide(color: AppColors.primary, width: 2),
     ),
+    errorBorder: OutlineInputBorder(
+      borderRadius: BorderRadius.circular(50),
+      borderSide: const BorderSide(color: Colors.red, width: 1.5),
+    ),
+    focusedErrorBorder: OutlineInputBorder(
+      borderRadius: BorderRadius.circular(50),
+      borderSide: const BorderSide(color: Colors.red, width: 2),
+    ),
   );
 }
 
@@ -31,6 +39,8 @@ ButtonStyle appButtonStyle() {
   return ElevatedButton.styleFrom(
     backgroundColor: AppColors.primary,
     foregroundColor: AppColors.white,
+    disabledBackgroundColor: AppColors.primary.withOpacity(.45),
+    disabledForegroundColor: AppColors.white,
     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(50)),
   );
 }
@@ -145,14 +155,25 @@ Widget infoCard({
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Icon(icon, color: AppColors.primary, size: 28),
             const SizedBox(width: 10),
-            Expanded(child: Text(title, style: AppTextStyles.cardTitle)),
+            Expanded(
+              child: Text(
+                title,
+                textAlign: TextAlign.right,
+                style: AppTextStyles.cardTitle,
+              ),
+            ),
           ],
         ),
         const SizedBox(height: 12),
-        Text(content, style: AppTextStyles.cardBody),
+        Text(
+          content,
+          textAlign: TextAlign.right,
+          style: AppTextStyles.cardBody,
+        ),
       ],
     ),
   );

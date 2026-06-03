@@ -1,40 +1,17 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'package:url_launcher/url_launcher.dart';
 
 import '/core/theme/light_theme.dart';
 import '/core/theme/text_styles.dart';
-import '/core/widgets/widget.dart'; // تأكدي من مسمى الملف لديكِ سواءً .dart أو .yaml ليعمل الاستيراد
-
+import '/core/widgets/widget.dart';
 import '../../providers/patient_provider.dart';
-import 'patient_home_screen.dart';
 
 class AcceptedPatientScreen extends StatelessWidget {
   const AcceptedPatientScreen({super.key});
 
-  // الدالة الفعالة لفتح واجهة الاتصال في الهاتف مباشرة
-  Future<void> _makePhoneCall(String phoneNumber) async {
-    final Uri launchUri = Uri(
-      scheme: 'tel',
-      path: phoneNumber,
-    );
-    if (await canLaunchUrl(launchUri)) {
-      await launchUrl(launchUri);
-    } else {
-      // تفادي الفشل في حال عدم وجود تطبيق اتصال
-    }
-  }
-
   @override
   Widget build(BuildContext context) {
-    final provider = Provider.of<PatientProvider>(
-      context,
-      listen: false,
-    );
-
-    // جلب البيانات من الموديل والبروفايدر مع وضع قيم احتياطية
-    final String donorPhone = provider.donorPhone.isEmpty ? '777123456' : provider.donorPhone;
-    final String donorName = provider.donorName.isEmpty ? 'أحمد محمد' : provider.donorName;
+    final patientProvider = context.watch<PatientProvider>();
 
     return Directionality(
       textDirection: TextDirection.rtl,
@@ -45,87 +22,68 @@ class AcceptedPatientScreen extends StatelessWidget {
               padding: const EdgeInsets.all(24),
               child: Column(
                 children: [
-                  const SizedBox(height: 20),
-
-                  const Icon(
-                    Icons.check_circle,
-                    color: Colors.green,
-                    size: 110,
-                  ),
-
-                  const SizedBox(height: 20),
-
-                  const Text(
-                    'تم العثور على متبرع',
-                    textAlign: TextAlign.center,
-                    style: AppTextStyles.title,
-                  ),
+                  appBackButton(context),
 
                   const SizedBox(height: 30),
 
+                  const Text(
+                    'تم قبول الطلب',
+                    style: AppTextStyles.title,
+                    textAlign: TextAlign.center,
+                  ),
+
+                  const SizedBox(height: 40),
+
+                  Container(
+                    width: 130,
+                    height: 130,
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      color: Colors.green.withOpacity(.12),
+                    ),
+                    child: const Icon(
+                      Icons.check_circle,
+                      color: Colors.green,
+                      size: 86,
+                    ),
+                  ),
+
+                  const SizedBox(height: 35),
+
                   Container(
                     width: double.infinity,
-                    padding: const EdgeInsets.all(24),
+                    padding: const EdgeInsets.all(22),
                     decoration: BoxDecoration(
                       color: AppColors.card,
                       borderRadius: BorderRadius.circular(25),
                     ),
                     child: Column(
                       children: [
-                        Container(
-                          width: 90,
-                          height: 90,
-                          decoration: const BoxDecoration(
+                        const Text(
+                          'وجدنا متبرعاً مناسباً',
+                          textAlign: TextAlign.center,
+                          style: TextStyle(
+                            fontSize: 20,
+                            fontWeight: FontWeight.bold,
                             color: AppColors.primary,
-                            shape: BoxShape.circle,
-                          ),
-                          child: const Icon(
-                            Icons.person,
-                            color: Colors.white,
-                            size: 45,
-                          ),
-                        ),
-
-                        const SizedBox(height: 20),
-
-                        const Text(
-                          'اسم المتبرع',
-                          style: TextStyle(
-                            color: AppColors.grey,
                             fontFamily: 'Cairo',
                           ),
                         ),
-
-                        const SizedBox(height: 5),
-
-                        Text(
-                          donorName,
-                          style: const TextStyle(
-                            fontSize: 18,
-                            fontWeight: FontWeight.bold,
-                            fontFamily: 'Cairo',
-                          ),
+                        const SizedBox(height: 16),
+                        _InfoLine(
+                          icon: Icons.person,
+                          title: 'اسم المتبرع',
+                          value: patientProvider.donorName.isEmpty
+                              ? 'غير محدد'
+                              : patientProvider.donorName,
                         ),
-
-                        const SizedBox(height: 20),
-
-                        const Text(
-                          'رقم التواصل',
-                          style: TextStyle(
-                            color: AppColors.grey,
-                            fontFamily: 'Cairo',
-                          ),
-                        ),
-
-                        const SizedBox(height: 5),
-
-                        Text(
-                          donorPhone,
-                          style: const TextStyle(
-                            fontSize: 18,
-                            fontWeight: FontWeight.bold,
-                            fontFamily: 'Cairo',
-                          ),
+                        const SizedBox(height: 12),
+                        _InfoLine(
+                          icon: Icons.phone,
+                          title: 'رقم المتبرع',
+                          value: patientProvider.donorPhone.isEmpty
+                              ? 'غير محدد'
+                              : patientProvider.donorPhone,
                         ),
                       ],
                     ),
@@ -133,49 +91,15 @@ class AcceptedPatientScreen extends StatelessWidget {
 
                   const Spacer(),
 
-                  // زر التواصل الفعال والمربوط بالنظام
                   SizedBox(
                     width: double.infinity,
-                    child: ElevatedButton.icon(
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: Colors.green,
-                        foregroundColor: Colors.white,
-                        padding: const EdgeInsets.symmetric(
-                          vertical: 15,
-                        ),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(25),
-                        ),
-                      ),
-                      onPressed: () => _makePhoneCall(donorPhone),
-                      icon: const Icon(Icons.phone),
-                      label: const Text(
-                        'التواصل مع المتبرع',
-                        style: AppTextStyles.button,
-                      ),
-                    ),
-                  ),
-
-                  const SizedBox(height: 12),
-
-                  SizedBox(
-                    width: double.infinity,
-                    child: ElevatedButton.icon(
+                    height: 60,
+                    child: ElevatedButton(
                       style: appButtonStyle(),
                       onPressed: () {
-                        Navigator.pushAndRemoveUntil(
-                          context,
-                          MaterialPageRoute(
-                            builder: (_) => const HomePatientScreen(),
-                          ),
-                          (route) => false,
-                        );
+                        Navigator.pop(context);
                       },
-                      icon: const Icon(Icons.home),
-                      label: const Text(
-                        'العودة للرئيسية',
-                        style: AppTextStyles.button,
-                      ),
+                      child: const Text('العودة', style: AppTextStyles.button),
                     ),
                   ),
                 ],
@@ -184,6 +108,43 @@ class AcceptedPatientScreen extends StatelessWidget {
           ),
         ),
       ),
+    );
+  }
+}
+
+class _InfoLine extends StatelessWidget {
+  final IconData icon;
+  final String title;
+  final String value;
+
+  const _InfoLine({
+    required this.icon,
+    required this.title,
+    required this.value,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      children: [
+        Icon(icon, color: AppColors.primary, size: 22),
+        const SizedBox(width: 10),
+        Text(
+          '$title: ',
+          style: const TextStyle(
+            fontFamily: 'Cairo',
+            fontWeight: FontWeight.bold,
+            color: AppColors.primary,
+          ),
+        ),
+        Expanded(
+          child: Text(
+            value,
+            textAlign: TextAlign.right,
+            style: const TextStyle(fontFamily: 'Cairo', color: AppColors.black),
+          ),
+        ),
+      ],
     );
   }
 }

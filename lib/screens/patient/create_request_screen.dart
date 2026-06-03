@@ -3,7 +3,6 @@ import 'package:provider/provider.dart';
 
 import '/core/theme/text_styles.dart';
 import '/core/widgets/widget.dart';
-
 import '../../providers/patient_provider.dart';
 import 'waiting_screen.dart';
 
@@ -15,17 +14,52 @@ class CreateRequestScreen extends StatefulWidget {
 }
 
 class _CreateRequestScreenState extends State<CreateRequestScreen> {
-  // 1. تعريف الروافع (Controllers) لسحب النصوص المكتوبة في هذه الشاشة
-  final TextEditingController hospitalController = TextEditingController();
-  final TextEditingController locationController = TextEditingController();
-  final TextEditingController notesController = TextEditingController();
+  final GlobalKey<FormState> _formKey = GlobalKey<FormState>();
+
+  final TextEditingController _hospitalController = TextEditingController();
+  final TextEditingController _locationController = TextEditingController();
+  final TextEditingController _notesController = TextEditingController();
 
   @override
   void dispose() {
-    hospitalController.dispose();
-    locationController.dispose();
-    notesController.dispose();
+    _hospitalController.dispose();
+    _locationController.dispose();
+    _notesController.dispose();
     super.dispose();
+  }
+
+  String? _requiredValidator(String? value, String message) {
+    if (value == null || value.trim().isEmpty) {
+      return message;
+    }
+
+    return null;
+  }
+
+  Future<void> _sendRequest() async {
+    if (!_formKey.currentState!.validate()) return;
+
+    final patientProvider = context.read<PatientProvider>();
+
+    await patientProvider.sendRequestToDatabase(
+      hospital: _hospitalController.text.trim(),
+      location: _locationController.text.trim(),
+      notes: _notesController.text.trim(),
+    );
+
+    if (!mounted) return;
+
+    if (patientProvider.errorMessage != null) {
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(patientProvider.errorMessage!)));
+      return;
+    }
+
+    Navigator.pushReplacement(
+      context,
+      MaterialPageRoute(builder: (_) => const WaitingPatientScreen()),
+    );
   }
 
   @override
@@ -38,106 +72,93 @@ class _CreateRequestScreenState extends State<CreateRequestScreen> {
             child: SingleChildScrollView(
               physics: const BouncingScrollPhysics(),
               padding: const EdgeInsets.all(24),
-              child: Column(
-                children: [
-                  appBackButton(context),
+              child: Form(
+                key: _formKey,
+                child: Column(
+                  children: [
+                    appBackButton(context),
 
-                  const SizedBox(height: 20),
+                    const SizedBox(height: 20),
 
-                  const Text('إنشاء طلب تبرع', style: AppTextStyles.title),
-
-                  const SizedBox(height: 35),
-
-                  AppGlassContainer(
-                    child: Column(
-                      children: [
-                        /// اسم المستشفى
-                        TextField(
-                          controller: hospitalController, // ربط الرافعة
-                          decoration: appInputDecoration(
-                            'اسم المستشفى',
-                            Icons.local_hospital,
-                          ),
-                        ),
-
-                        const SizedBox(height: 18),
-
-                        /// الموقع أو العنوان
-                        TextField(
-                          controller: locationController, // ربط الرافعة
-                          decoration: appInputDecoration(
-                            'الموقع أو العنوان',
-                            Icons.location_on,
-                          ),
-                        ),
-
-                        const SizedBox(height: 18),
-
-                        /// ملاحظات إضافية
-                        TextField(
-                          controller: notesController, // ربط الرافعة
-                          maxLines: 4,
-                          decoration: appInputDecoration(
-                            'ملاحظات إضافية',
-                            Icons.notes,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-
-                  const SizedBox(height: 25),
-
-                  Container(
-                    width: double.infinity,
-                    padding: const EdgeInsets.all(18),
-                    decoration: BoxDecoration(
-                      borderRadius: BorderRadius.circular(25),
-                      color: Colors.white.withOpacity(.15),
-                    ),
-                    child: const Text(
-                      'سيتم إرسال الطلب تلقائياً إلى جميع المتبرعين المطابقين لفصيلة الدم المسجلة في حسابك.',
+                    const Text(
+                      'إنشاء طلب تبرع',
+                      style: AppTextStyles.title,
                       textAlign: TextAlign.center,
-                      style: AppTextStyles.cardBody,
                     ),
-                  ),
 
-                  const SizedBox(height: 30),
+                    const SizedBox(height: 40),
 
-                  SizedBox(
-                    width: double.infinity,
-                    child: ElevatedButton.icon(
-                      style: appButtonStyle(),
-                      onPressed: () async {
-                        // 1. استدعاء الدالة الجديدة التي ترسل بيانات الطلب (المستشفى والموقع)
-                        final patientProvider = context.read<PatientProvider>();
-
-                        await patientProvider.sendRequestToDatabase(
-                          hospital:
-                              hospitalController.text, // النص من الـ Controller
-                          location:
-                              locationController.text, // النص من الـ Controller
-                          notes: notesController.text, // النص من الـ Controller
+                    TextFormField(
+                      controller: _hospitalController,
+                      textAlign: TextAlign.right,
+                      decoration: appInputDecoration(
+                        'اسم المستشفى',
+                        Icons.local_hospital,
+                      ),
+                      validator: (value) {
+                        return _requiredValidator(
+                          value,
+                          'يرجى إدخال اسم المستشفى',
                         );
-
-                        // 2. الانتقال لشاشة الانتظار
-                        if (mounted) {
-                          Navigator.pushReplacement(
-                            context,
-                            MaterialPageRoute(
-                              builder: (_) => const WaitingPatientScreen(),
-                            ),
-                          );
-                        }
                       },
-                      icon: const Icon(Icons.send),
-                      label: const Padding(
-                        padding: EdgeInsets.symmetric(vertical: 15),
-                        child: Text('إرسال الطلب', style: AppTextStyles.button),
+                    ),
+
+                    const SizedBox(height: 18),
+
+                    TextFormField(
+                      controller: _locationController,
+                      textAlign: TextAlign.right,
+                      decoration: appInputDecoration(
+                        'الموقع أو العنوان',
+                        Icons.location_on,
+                      ),
+                      validator: (value) {
+                        return _requiredValidator(
+                          value,
+                          'يرجى إدخال الموقع أو العنوان',
+                        );
+                      },
+                    ),
+
+                    const SizedBox(height: 18),
+
+                    TextFormField(
+                      controller: _notesController,
+                      textAlign: TextAlign.right,
+                      minLines: 3,
+                      maxLines: 5,
+                      decoration: appInputDecoration(
+                        'ملاحظات إضافية',
+                        Icons.notes,
                       ),
                     ),
-                  ),
-                ],
+
+                    const SizedBox(height: 35),
+
+                    SizedBox(
+                      width: double.infinity,
+                      height: 60,
+                      child: Consumer<PatientProvider>(
+                        builder: (context, patientProvider, child) {
+                          return ElevatedButton(
+                            style: appButtonStyle(),
+                            onPressed: patientProvider.isLoading
+                                ? null
+                                : _sendRequest,
+                            child: patientProvider.isLoading
+                                ? const CircularProgressIndicator(
+                                    color: Colors.white,
+                                  )
+                                : const Text(
+                                    'إرسال الطلب',
+                                    style: AppTextStyles.button,
+                                  ),
+                          );
+                        },
+                      ),
+                    ),
+                  ],
+                ),
               ),
             ),
           ),

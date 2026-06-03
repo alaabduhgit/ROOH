@@ -23,6 +23,30 @@ class DonorModel {
     this.lastDonationDate,
   });
 
+  DonorModel copyWith({
+    String? id,
+    String? name,
+    String? phone,
+    String? bloodType,
+    String? city,
+    int? age,
+    bool? isAvailable,
+    int? donationReadiness,
+    DateTime? lastDonationDate,
+  }) {
+    return DonorModel(
+      id: id ?? this.id,
+      name: name ?? this.name,
+      phone: phone ?? this.phone,
+      bloodType: bloodType ?? this.bloodType,
+      city: city ?? this.city,
+      age: age ?? this.age,
+      isAvailable: isAvailable ?? this.isAvailable,
+      donationReadiness: donationReadiness ?? this.donationReadiness,
+      lastDonationDate: lastDonationDate ?? this.lastDonationDate,
+    );
+  }
+
   Map<String, dynamic> toMap() {
     return {
       'id': id,
@@ -33,25 +57,29 @@ class DonorModel {
       'age': age,
       'isAvailable': isAvailable,
       'donationReadiness': donationReadiness,
-      'lastDonationDate': lastDonationDate,
-      'createdAt': FieldValue.serverTimestamp(),
-      'updatedAt': FieldValue.serverTimestamp(),
+      'lastDonationDate': lastDonationDate == null
+          ? null
+          : Timestamp.fromDate(lastDonationDate!),
     };
   }
 
   factory DonorModel.fromMap(Map<String, dynamic> map) {
+    final dynamic lastDate = map['lastDonationDate'];
+
     return DonorModel(
-      id: map['id'] ?? '',
-      name: map['name'] ?? '',
-      phone: map['phone'] ?? '',
-      bloodType: map['bloodType'] ?? '',
-      city: map['city'] ?? '',
-      age: map['age'] ?? 0,
-      isAvailable: map['isAvailable'] ?? false,
-      donationReadiness: map['donationReadiness'] ?? 100,
-      lastDonationDate: map['lastDonationDate'] == null
-          ? null
-          : (map['lastDonationDate'] as Timestamp).toDate(),
+      id: map['id']?.toString() ?? '',
+      name: map['name']?.toString() ?? '',
+      phone: map['phone']?.toString() ?? '',
+      bloodType: map['bloodType']?.toString() ?? '',
+      city: map['city']?.toString() ?? '',
+      age: map['age'] is int
+          ? map['age'] as int
+          : int.tryParse(map['age']?.toString() ?? '') ?? 0,
+      isAvailable: map['isAvailable'] == true,
+      donationReadiness: map['donationReadiness'] is int
+          ? map['donationReadiness'] as int
+          : int.tryParse(map['donationReadiness']?.toString() ?? '') ?? 100,
+      lastDonationDate: lastDate is Timestamp ? lastDate.toDate() : null,
     );
   }
 }

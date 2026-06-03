@@ -3,51 +3,41 @@ import 'package:flutter/material.dart';
 import '/core/theme/light_theme.dart';
 import '/core/theme/text_styles.dart';
 import '/core/widgets/widget.dart';
-
+import 'blood_info_screen.dart';
 import 'donor_register_screen.dart';
 import 'patient_register_screen.dart';
-import 'blood_info_screen.dart';
 
 class ChooseRoleScreen extends StatelessWidget {
   const ChooseRoleScreen({super.key});
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      body: Stack(
-        children: [
-          /// الخلفية
-          Positioned.fill(
-            child: Image.asset('assets/bg.png', fit: BoxFit.cover),
-          ),
-
-          /// طبقة شفافة
-          Container(color: Colors.white.withOpacity(.08)),
-
-          SafeArea(
+    return Directionality(
+      textDirection: TextDirection.rtl,
+      child: Scaffold(
+        body: AppBackground(
+          child: SafeArea(
             child: Padding(
               padding: const EdgeInsets.all(24),
-
               child: Column(
                 children: [
-                  /// زر الرجوع
                   appBackButton(context),
 
                   const Spacer(),
 
-                  /// العنوان
-                  const Text("اختر نوع الحساب", style: AppTextStyles.title),
+                  const Text(
+                    'اختر نوع الحساب',
+                    style: AppTextStyles.title,
+                    textAlign: TextAlign.center,
+                  ),
 
                   const SizedBox(height: 50),
 
-                  /// زر المتبرع
                   SizedBox(
                     width: double.infinity,
                     height: 60,
-
                     child: ElevatedButton(
                       style: appButtonStyle(),
-
                       onPressed: () {
                         Navigator.push(
                           context,
@@ -56,9 +46,8 @@ class ChooseRoleScreen extends StatelessWidget {
                           ),
                         );
                       },
-
                       child: const Text(
-                        "مستعد للتبرع",
+                        'مستعد للتبرع',
                         style: AppTextStyles.button,
                       ),
                     ),
@@ -66,14 +55,11 @@ class ChooseRoleScreen extends StatelessWidget {
 
                   const SizedBox(height: 20),
 
-                  /// زر المحتاج
                   SizedBox(
                     width: double.infinity,
                     height: 60,
-
                     child: ElevatedButton(
                       style: appButtonStyle(),
-
                       onPressed: () {
                         Navigator.push(
                           context,
@@ -82,9 +68,8 @@ class ChooseRoleScreen extends StatelessWidget {
                           ),
                         );
                       },
-
                       child: const Text(
-                        "أحتاج لدم",
+                        'أحتاج لدم',
                         style: AppTextStyles.button,
                       ),
                     ),
@@ -92,7 +77,6 @@ class ChooseRoleScreen extends StatelessWidget {
 
                   const SizedBox(height: 45),
 
-                  /// ثقف نفسك
                   GestureDetector(
                     onTap: () {
                       Navigator.push(
@@ -102,39 +86,34 @@ class ChooseRoleScreen extends StatelessWidget {
                         ),
                       );
                     },
-
                     child: Container(
                       width: double.infinity,
-
                       padding: const EdgeInsets.all(20),
-
                       decoration: BoxDecoration(
-                        color: Colors.white.withOpacity(.92),
-
+                        color: AppColors.white.withOpacity(.92),
                         borderRadius: BorderRadius.circular(25),
                       ),
-
                       child: const Column(
                         children: [
                           Text(
-                            "ثقف نفسك قبل التبرع",
+                            'ثقف نفسك قبل التبرع',
                             style: TextStyle(
                               fontSize: 20,
                               fontWeight: FontWeight.bold,
                               color: AppColors.primary,
+                              fontFamily: 'Cairo',
                             ),
-                          ),
-
-                          SizedBox(height: 12),
-
-                          Text(
-                            "اضغط لمعرفة كل ما يخص الدم والتبرع",
                             textAlign: TextAlign.center,
-
+                          ),
+                          SizedBox(height: 12),
+                          Text(
+                            'اضغط لمعرفة كل ما يخص الدم والتبرع',
+                            textAlign: TextAlign.center,
                             style: TextStyle(
                               fontSize: 15,
                               color: Colors.black87,
                               height: 1.6,
+                              fontFamily: 'Cairo',
                             ),
                           ),
                         ],
@@ -147,7 +126,7 @@ class ChooseRoleScreen extends StatelessWidget {
               ),
             ),
           ),
-        ],
+        ),
       ),
     );
   }

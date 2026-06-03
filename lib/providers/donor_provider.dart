@@ -2,52 +2,76 @@ import 'package:flutter/material.dart';
 
 import '../models/donor_model.dart';
 import '../services/donor_service.dart';
+import '../services/local_storage_service.dart';
+import '../services/notification_service.dart';
+import '../services/patient_service.dart';
 
 class DonorProvider with ChangeNotifier {
   final DonorService _donorService = DonorService();
+  final PatientService _patientService = PatientService();
+  final LocalStorageService _localStorageService = LocalStorageService();
+  final NotificationService _notificationService = NotificationService();
 
   DonorModel _currentDonor = DonorModel(
-    id: '101',
-    name: 'أحمد محمد',
-    bloodType: 'O+',
+    id: '',
+    name: '',
+    bloodType: '',
     isAvailable: false,
   );
-
-  int _donationReadiness = 100;
-  String _lastDonationDate = '20/9/2025';
 
   bool _isLoading = false;
   bool _isSuccess = false;
   String? _errorMessage;
 
-  final List<Map<String, String>> _bloodRequests = [
-    {
-      'id': '1',
-      'title': 'طلب تبرع عاجل - مستشفى الثورة',
-      'hospital': 'مستشفى الثورة العام',
-      'bloodType': 'O+',
-    },
-    {
-      'id': '2',
-      'title': 'طلب تبرع - مستشفى اليمن الدولي',
-      'hospital': 'مستشفى اليمن الدولي',
-      'bloodType': 'O+',
-    },
-  ];
-
   DonorModel get currentDonor => _currentDonor;
-  int get donationReadiness => _donationReadiness;
-  String get lastDonationDate => _lastDonationDate;
-
   bool get isLoading => _isLoading;
   bool get isSuccess => _isSuccess;
   String? get errorMessage => _errorMessage;
 
-  List<Map<String, String>> get bloodRequests {
-    if (_donationReadiness == 100 && _currentDonor.isAvailable) {
-      return List.unmodifiable(_bloodRequests);
+  int get donationReadiness => _currentDonor.donationReadiness;
+
+  String get lastDonationDate {
+    final date = _currentDonor.lastDonationDate;
+
+    if (date == null) {
+      return 'لا يوجد تبرع سابق';
     }
-    return [];
+
+    return '${date.day}/${date.month}/${date.year}';
+  }
+
+  bool get hasDonorSession {
+    return _currentDonor.id.isNotEmpty;
+  }
+
+  Future<void> loadDonorById(String donorId) async {
+    if (donorId.isEmpty) return;
+
+    _isLoading = true;
+    _errorMessage = null;
+    notifyListeners();
+
+    try {
+      final donor = await _donorService.getDonor(donorId);
+
+      if (donor == null) {
+        await _localStorageService.clearSession();
+        _currentDonor = DonorModel(
+          id: '',
+          name: '',
+          bloodType: '',
+          isAvailable: false,
+        );
+      } else {
+        _currentDonor = donor;
+      }
+    } catch (error) {
+      _errorMessage = 'حدث خطأ أثناء تحميل بيانات المتبرع';
+      debugPrint('Load donor error: $error');
+    } finally {
+      _isLoading = false;
+      notifyListeners();
+    }
   }
 
   Future<void> registerDonor({
@@ -63,10 +87,10 @@ class DonorProvider with ChangeNotifier {
     notifyListeners();
 
     try {
-      final uid = _donorService.getCurrentUidOrTemporary();
+      final donorId = _donorService.getCurrentUidOrTemporary();
 
       final donor = DonorModel(
-        id: uid,
+        id: donorId,
         name: name,
         phone: phone,
         bloodType: bloodType,
@@ -79,13 +103,13 @@ class DonorProvider with ChangeNotifier {
 
       await _donorService.createDonor(donor);
 
-      _currentDonor = donor;
-      _donationReadiness = donor.donationReadiness;
-      _lastDonationDate = 'لا يوجد';
+      await _localStorageService.saveSession(userId: donorId, role: 'donor');
 
+      _currentDonor = donor;
       _isSuccess = true;
     } catch (error) {
       _errorMessage = 'حدث خطأ أثناء تسجيل المتبرع، حاول مرة أخرى';
+      debugPrint('Register donor error: $error');
     } finally {
       _isLoading = false;
       notifyListeners();
@@ -93,57 +117,79 @@ class DonorProvider with ChangeNotifier {
   }
 
   Future<void> toggleAvailability(bool value) async {
-    if (_donationReadiness < 100) return;
+    if (_currentDonor.id.isEmpty) return;
+    if (_currentDonor.donationReadiness < 100) return;
 
-    _currentDonor = DonorModel(
-      id: _currentDonor.id,
-      name: _currentDonor.name,
-      phone: _currentDonor.phone,
-      bloodType: _currentDonor.bloodType,
-      city: _currentDonor.city,
-      age: _currentDonor.age,
-      isAvailable: value,
-      donationReadiness: _currentDonor.donationReadiness,
-      lastDonationDate: _currentDonor.lastDonationDate,
-    );
+    final previousDonor = _currentDonor;
 
+    _currentDonor = _currentDonor.copyWith(isAvailable: value);
     notifyListeners();
 
-    // السطر الجديد للربط بالقاعدة:
-    await _donorService.createDonor(_currentDonor);
-  }
-
-  Future<void> acceptBloodRequest(String requestId) async {
     try {
-      _bloodRequests.removeWhere((request) => request['id'] == requestId);
-
-      _donationReadiness = 0;
-
-      _currentDonor = DonorModel(
-        id: _currentDonor.id,
-        name: _currentDonor.name,
-        phone: _currentDonor.phone,
-        bloodType: _currentDonor.bloodType,
-        city: _currentDonor.city,
-        age: _currentDonor.age,
-        isAvailable: false,
-        donationReadiness: 0,
-        lastDonationDate: _currentDonor.lastDonationDate,
+      await _donorService.updateAvailability(
+        donorId: _currentDonor.id,
+        isAvailable: value,
       );
-
+    } catch (error) {
+      _currentDonor = previousDonor;
       notifyListeners();
-    } catch (e) {
-      debugPrint("خطأ أثناء قبول الطلب: $e");
+      debugPrint('Update donor availability error: $error');
     }
   }
 
-  void rejectBloodRequest(String requestId) {
-    _bloodRequests.removeWhere((request) => request['id'] == requestId);
-    notifyListeners();
+  Future<void> acceptBloodRequest(String requestId) async {
+    if (requestId.isEmpty || _currentDonor.id.isEmpty) return;
+
+    try {
+      await _patientService.acceptBloodRequest(
+        requestId: requestId,
+        donorId: _currentDonor.id,
+        donorName: _currentDonor.name,
+        donorPhone: _currentDonor.phone,
+      );
+
+      await _donorService.markDonorAfterAcceptedRequest(
+        donorId: _currentDonor.id,
+      );
+
+      _currentDonor = _currentDonor.copyWith(
+        isAvailable: false,
+        donationReadiness: 0,
+        lastDonationDate: DateTime.now(),
+      );
+
+      notifyListeners();
+    } catch (error) {
+      _errorMessage = 'حدث خطأ أثناء قبول الطلب';
+      notifyListeners();
+      debugPrint('Accept blood request error: $error');
+    }
+  }
+
+  Future<void> rejectBloodRequest(String requestId) async {
+    if (requestId.isEmpty || _currentDonor.id.isEmpty) return;
+
+    try {
+      await _patientService.rejectBloodRequest(
+        requestId: requestId,
+        donorId: _currentDonor.id,
+      );
+    } catch (error) {
+      debugPrint('Reject blood request error: $error');
+    }
   }
 
   Future<void> logoutAndDestroyAccount() async {
     try {
+      final donorId = _currentDonor.id;
+
+      if (donorId.isNotEmpty) {
+        await _notificationService.deleteNotificationsForUser(donorId);
+        await _donorService.deleteDonor(donorId);
+      }
+
+      await _localStorageService.clearSession();
+
       _currentDonor = DonorModel(
         id: '',
         name: '',
@@ -156,7 +202,9 @@ class DonorProvider with ChangeNotifier {
 
       notifyListeners();
     } catch (error) {
-      debugPrint('حدث خطأ أثناء حذف الحساب: $error');
+      _errorMessage = 'حدث خطأ أثناء حذف حساب المتبرع';
+      notifyListeners();
+      debugPrint('Delete donor account error: $error');
     }
   }
 }

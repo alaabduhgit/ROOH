@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
-import '/core/widgets/widget.dart';
 import '/core/theme/text_styles.dart';
-import '../patient/patient_home_screen.dart'; // مسار الملف الحقيقي المعتمد عندكِ
+import '/core/widgets/widget.dart';
 import '../../providers/patient_provider.dart';
+import '../patient/patient_home_screen.dart';
 
 class PatientRegisterScreen extends StatefulWidget {
   const PatientRegisterScreen({super.key});
@@ -14,14 +14,14 @@ class PatientRegisterScreen extends StatefulWidget {
 }
 
 class _PatientRegisterScreenState extends State<PatientRegisterScreen> {
-  final _formKey = GlobalKey<FormState>();
+  final GlobalKey<FormState> _formKey = GlobalKey<FormState>();
 
-  final _nameController = TextEditingController();
-  final _phoneController = TextEditingController();
-  final _hospitalController = TextEditingController();
-  final _bagsController = TextEditingController();
+  final TextEditingController _nameController = TextEditingController();
+  final TextEditingController _phoneController = TextEditingController();
+  final TextEditingController _hospitalController = TextEditingController();
+  final TextEditingController _bagsController = TextEditingController();
 
-  String? _selectedBloodType = "O+"; // القيمة الافتراضية للفصيلة
+  String? _selectedBloodType = 'O+';
 
   @override
   void dispose() {
@@ -32,7 +32,28 @@ class _PatientRegisterScreenState extends State<PatientRegisterScreen> {
     super.dispose();
   }
 
-  // الدالة المسؤولة عن فحص الحقول وإرسال طلب المحتاج للسحاب
+  String? _requiredValidator(String? value, String message) {
+    if (value == null || value.trim().isEmpty) {
+      return message;
+    }
+
+    return null;
+  }
+
+  String? _phoneValidator(String? value) {
+    if (value == null || value.trim().isEmpty) {
+      return 'يرجى إدخال رقم التواصل';
+    }
+
+    final phone = value.trim();
+
+    if (phone.length < 9) {
+      return 'رقم التواصل غير صحيح';
+    }
+
+    return null;
+  }
+
   Future<void> _registerPatient() async {
     if (!_formKey.currentState!.validate()) return;
 
@@ -46,81 +67,68 @@ class _PatientRegisterScreenState extends State<PatientRegisterScreen> {
 
     if (!mounted) return;
 
+    if (patientProvider.errorMessage != null) {
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(patientProvider.errorMessage!)));
+      return;
+    }
+
     Navigator.pushReplacement(
       context,
       MaterialPageRoute(builder: (_) => const HomePatientScreen()),
     );
   }
 
-  // نفس دالات التحقق الذكية الخاصة بكِ يا نور لمنع الغلط والخطوط الحمراء
-  String? _requiredValidator(String? value, String message) {
-    if (value == null || value.trim().isEmpty) {
-      return message;
-    }
-    return null;
-  }
-
-  String? _phoneValidator(String? value) {
-    if (value == null || value.trim().isEmpty) {
-      return 'يرجى إدخال رقم الهاتف';
-    }
-
-    final phone = value.trim();
-
-    if (phone.length < 9) {
-      return 'رقم الهاتف غير صحيح';
-    }
-
-    return null;
-  }
-
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      body: Stack(
-        children: [
-          Positioned.fill(
-            child: Image.asset('assets/bg.png', fit: BoxFit.cover),
-          ),
-
-          Container(color: Colors.white.withOpacity(.08)),
-
-          SafeArea(
+    return Directionality(
+      textDirection: TextDirection.rtl,
+      child: Scaffold(
+        body: AppBackground(
+          child: SafeArea(
             child: SingleChildScrollView(
+              physics: const BouncingScrollPhysics(),
               padding: const EdgeInsets.all(24),
               child: Form(
                 key: _formKey,
                 child: Column(
                   children: [
-                    /// زر الرجوع
                     appBackButton(context),
 
                     const SizedBox(height: 20),
 
-                    /// العنوان
-                    const Text("بيانات المحتاج", style: AppTextStyles.title),
+                    const Text(
+                      'بيانات المحتاج',
+                      style: AppTextStyles.title,
+                      textAlign: TextAlign.center,
+                    ),
 
                     const SizedBox(height: 40),
 
-                    /// اسم المريض
                     TextFormField(
                       controller: _nameController,
+                      textAlign: TextAlign.right,
                       decoration: appInputDecoration(
-                        "اسم المريض",
+                        'اسم المريض',
                         Icons.person,
                       ),
-                      validator: (value) =>
-                          _requiredValidator(value, 'يرجى إدخال اسم المريض'),
+                      validator: (value) {
+                        return _requiredValidator(
+                          value,
+                          'يرجى إدخال اسم المريض',
+                        );
+                      },
                     ),
 
                     const SizedBox(height: 18),
 
-                    /// رقم التواصل
                     TextFormField(
                       controller: _phoneController,
+                      textAlign: TextAlign.right,
                       keyboardType: TextInputType.phone,
                       decoration: appInputDecoration(
-                        "رقم التواصل",
+                        'رقم التواصل',
                         Icons.phone,
                       ),
                       validator: _phoneValidator,
@@ -128,22 +136,21 @@ class _PatientRegisterScreenState extends State<PatientRegisterScreen> {
 
                     const SizedBox(height: 18),
 
-                    /// فصيلة الدم المطلوبة
                     DropdownButtonFormField<String>(
-                      value: _selectedBloodType,
+                      initialValue: _selectedBloodType,
                       decoration: appInputDecoration(
-                        "فصيلة الدم المطلوبة",
+                        'فصيلة الدم المطلوبة',
                         Icons.bloodtype,
                       ),
                       items: const [
-                        DropdownMenuItem(value: "A+", child: Text("A+")),
-                        DropdownMenuItem(value: "A-", child: Text("A-")),
-                        DropdownMenuItem(value: "B+", child: Text("B+")),
-                        DropdownMenuItem(value: "B-", child: Text("B-")),
-                        DropdownMenuItem(value: "AB+", child: Text("AB+")),
-                        DropdownMenuItem(value: "AB-", child: Text("AB-")),
-                        DropdownMenuItem(value: "O+", child: Text("O+")),
-                        DropdownMenuItem(value: "O-", child: Text("O-")),
+                        DropdownMenuItem(value: 'A+', child: Text('A+')),
+                        DropdownMenuItem(value: 'A-', child: Text('A-')),
+                        DropdownMenuItem(value: 'B+', child: Text('B+')),
+                        DropdownMenuItem(value: 'B-', child: Text('B-')),
+                        DropdownMenuItem(value: 'AB+', child: Text('AB+')),
+                        DropdownMenuItem(value: 'AB-', child: Text('AB-')),
+                        DropdownMenuItem(value: 'O+', child: Text('O+')),
+                        DropdownMenuItem(value: 'O-', child: Text('O-')),
                       ],
                       onChanged: (value) {
                         setState(() {
@@ -154,47 +161,68 @@ class _PatientRegisterScreenState extends State<PatientRegisterScreen> {
                         if (value == null || value.isEmpty) {
                           return 'يرجى اختيار فصيلة الدم';
                         }
+
                         return null;
                       },
                     ),
 
                     const SizedBox(height: 18),
 
-                    /// اسم المستشفى
                     TextFormField(
                       controller: _hospitalController,
+                      textAlign: TextAlign.right,
                       decoration: appInputDecoration(
-                        "اسم المستشفى",
+                        'اسم المستشفى',
                         Icons.local_hospital,
                       ),
-                      validator: (value) =>
-                          _requiredValidator(value, 'يرجى إدخال اسم المستشفى'),
+                      validator: (value) {
+                        return _requiredValidator(
+                          value,
+                          'يرجى إدخال اسم المستشفى',
+                        );
+                      },
                     ),
 
                     const SizedBox(height: 18),
 
-                    /// عدد الأكياس المطلوبة
                     TextFormField(
                       controller: _bagsController,
+                      textAlign: TextAlign.right,
                       keyboardType: TextInputType.number,
                       decoration: appInputDecoration(
-                        "عدد الأكياس المطلوبة",
+                        'عدد الأكياس المطلوبة',
                         Icons.medical_services,
                       ),
-                      validator: (value) =>
-                          _requiredValidator(value, 'يرجى إدخال عدد الأكياس'),
+                      validator: (value) {
+                        return _requiredValidator(
+                          value,
+                          'يرجى إدخال عدد الأكياس',
+                        );
+                      },
                     ),
 
                     const SizedBox(height: 35),
 
-                    /// زر الإرسال
                     SizedBox(
                       width: double.infinity,
                       height: 60,
-                      child: ElevatedButton(
-                        style: appButtonStyle(),
-                        onPressed: _registerPatient,
-                        child: const Text("إرسال", style: AppTextStyles.button),
+                      child: Consumer<PatientProvider>(
+                        builder: (context, patientProvider, child) {
+                          return ElevatedButton(
+                            style: appButtonStyle(),
+                            onPressed: patientProvider.isLoading
+                                ? null
+                                : _registerPatient,
+                            child: patientProvider.isLoading
+                                ? const CircularProgressIndicator(
+                                    color: Colors.white,
+                                  )
+                                : const Text(
+                                    'إرسال',
+                                    style: AppTextStyles.button,
+                                  ),
+                          );
+                        },
                       ),
                     ),
                   ],
@@ -202,7 +230,7 @@ class _PatientRegisterScreenState extends State<PatientRegisterScreen> {
               ),
             ),
           ),
-        ],
+        ),
       ),
     );
   }
