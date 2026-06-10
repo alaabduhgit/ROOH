@@ -13,15 +13,15 @@ class ControlDonorScreen extends StatelessWidget {
   const ControlDonorScreen({super.key});
 
   Future<void> _deleteAccount(
-    BuildContext context,
+    BuildContext Context,
     DonorProvider provider,
   ) async {
     await provider.logoutAndDestroyAccount();
 
-    if (!context.mounted) return;
+    if (!Context.mounted) return;
 
     Navigator.pushAndRemoveUntil(
-      context,
+      Context,
       MaterialPageRoute(builder: (_) => const ChooseRoleScreen()),
       (route) => false,
     );
