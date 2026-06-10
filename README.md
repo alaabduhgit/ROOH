@@ -1,16 +1,4 @@
-# rooh
-
-A new Flutter project.
-
-## Getting Started
-
-This project is a starting point for a Flutter application.
-
-A few resources to get you started if this is your first Flutter project:
-
-- [Lab: Write your first Flutter app](https://docs.flutter.dev/get-started/codelab)
-- [Cookbook: Useful Flutter samples](https://docs.flutter.dev/cookbook)
-
-For help getting started with Flutter development, view the
-[online documentation](https://docs.flutter.dev/), which offers tutorials,
-samples, guidance on mobile development, and a full API reference.
+يهدف هذا المشروع  لتنظيم عملية التبرع بالدم وربط المحتاجين بالمتبرعين المناسبين بسرعة.
+يعالج التطبيق مشكلة صعوبة العثور على متبرع في الوقت المناسب عبر نظام طلبات يعتمد على فصيلة الدم والموقع وحالة توفر المتبرع. يمكن للمستخدم   إنشاء  حساب والدخول كمتبرع أو كمحتاج حسب حالته، مع وجود لوحة تحكم لكل طرف. 
+يسمح النظام للمتبرعين بتحديد توفرهم واستقبال الطلبات، بينما يستطيع المحتاجون إنشاء طلبات ومتابعتها. 
+عند قبول الطلب من أحد المتبرعين، يتم تزويد المحتاج ببيانات التواصل للتنسيق المباشر، ويبقى الفحص الطبي النهائي من مسؤولية المستشفى. يقدم التطبيق حلاً بسيطًا وعمليًا لتقليل زمن البحث عن متبرع وزيادة كفائة الإستجابة للحالات الطارئة.
